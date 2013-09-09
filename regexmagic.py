@@ -25,19 +25,20 @@ from IPython.display import display, HTML
 MATCH_TEMPL = '<font color="{0}"><u>{1}</u></font>'
 PATTERN_TEMPL = '<font color="green"><strong>{0}</strong></font>\n'
 
+
 @magics_class
 class RegexMagic(Magics):
     '''Provide the 'regex' calling point for the magic, and keep track of
     alternating colors while matching.'''
 
     this_color, next_color = 'red', 'blue'
-    
+
     @cell_magic
     def regex(self, pattern, text):
         pattern_str = PATTERN_TEMPL.format(pattern)
         result_str = [self.handle_line(pattern, line) for line in text.split('\n')]
         display(HTML(pattern_str + '\n'.join(result_str)))
-    
+
     def handle_line(self, pattern, line):
         result = []
         m = re.search(pattern, line)
@@ -50,5 +51,6 @@ class RegexMagic(Magics):
         result.append(line)
         return '<br/>{0}'.format(''.join(result))
 
-ip = get_ipython()
-ip.register_magics(RegexMagic)
+
+def load_ipython_extension(ipython):
+    ipython.register_magics(RegexMagic)
