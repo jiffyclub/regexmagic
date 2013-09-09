@@ -1,8 +1,9 @@
 regexmagic
 ==========
 
-A regular expression magic for the IPython Notebook
-meant to emulate the interactive matcher at http://regexpal.com.
+A regular expression magic for the IPython Notebook that emulates some
+of the capabilities of the interactive matcher at http://regexpal.com.
 
-The plugin currently doesn't read `{` and `}` characters,
-which means some patterns aren't interpreted properly.
+IPython presently interprets {x} to mean 'expand variable x', so
+regular expressions like '\d{4}' must be written as '\d{{4}}'.  We're
+working on it...

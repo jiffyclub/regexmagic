@@ -1,38 +1,54 @@
-import sys
+"""regexmagic provides a cell magic for the IPython Notebook called
+%%regex that runs regular expressions against lines of text without
+the clutter of re.search(...) calls.  The output is colorized to show
+the span of each match.
+
+Usage:
+
+%%regex a+b
+this text has no matches
+this line has one match: aaab
+about to match some more: aab
+
+Note: IPython presently interprets {x} to mean 'expand variable x', so
+      regular expressions like '\d{4}' must be written as '\d{{4}}'.
+      We're working on it..."""
+
+# This file is copyright 2013 by Matt Davis and Greg Wilson and
+# covered by the license at
+# https://github.com/gvwilson/regexmagic/blob/master/LICENSE
+
 import re
-from IPython.core.magic import register_cell_magic
-from IPython.display import HTML, display
+from IPython.core.magic import Magics, magics_class, cell_magic
+from IPython.display import display, HTML
 
-def load_ipython_extension(ipython):
-    pass
+MATCH_TEMPL = '<font color="{0}"><u>{1}</u></font>'
+PATTERN_TEMPL = '<font color="green"><strong>{0}</strong></font>\n'
 
-def unload_ipython_extension(ipython):
-    pass
+@magics_class
+class RegexMagic(Magics):
+    '''Provide the 'regex' calling point for the magic, and keep track of
+    alternating colors while matching.'''
 
-# Highlight colors alternate globally.
-this, next = None, None
-
-@register_cell_magic
-def regex(pattern, cell):
-    '''Match the pattern against every line in the cell and format results.'''
-    global this, next
-    this, next = "red", "blue"
-    result = '<font color="green"><strong>%s</strong></font>\n' % pattern + \
-             '\n'.join([handle(pattern, x) for x in cell.split('\n')])
-    return HTML(result)
-
-def handle(pattern, line):
-    '''Find successive matches, marking the text of each in color.'''
-    global this, next
-    result = []
-    m = re.search(pattern, line)
-    while m:
-        result.append(line[:m.start()])
-        result.append('<font color="%s"><u>' % this)
-        result.append(line[m.start():m.end()])
-        result.append('</u></font>')
-        this, next = next, this
-        line = line[m.end():]
+    this_color, next_color = 'red', 'blue'
+    
+    @cell_magic
+    def regex(self, pattern, text):
+        pattern_str = PATTERN_TEMPL.format(pattern)
+        result_str = [self.handle_line(pattern, line) for line in text.split('\n')]
+        display(HTML(pattern_str + '\n'.join(result_str)))
+    
+    def handle_line(self, pattern, line):
+        result = []
         m = re.search(pattern, line)
-    result.append(line)
-    return '<br/>%s' % ''.join(result)
+        while m:
+            result.append(line[:m.start()])
+            result.append(MATCH_TEMPL.format(self.this_color, line[m.start():m.end()]))
+            self.this_color, self.next_color = self.next_color, self.this_color
+            line = line[m.end():]
+            m = re.search(pattern, line)
+        result.append(line)
+        return '<br/>{0}'.format(''.join(result))
+
+ip = get_ipython()
+ip.register_magics(RegexMagic)
